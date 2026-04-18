@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OrgAuth — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #7c6dfa;
+      --accent2: #fa6d8a;
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --success: #4ade80;
+      --error: #f87171;
+      --warn: #facc15;
+      --card: #13131d;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+
+    .nav-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .nav-brand span {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.1rem;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+    .org-badge {
+      padding: 0.4rem 0.9rem;
+      background: rgba(124,109,250,0.12);
+      border: 1px solid rgba(124,109,250,0.3);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      padding: 0.4rem 0.9rem;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: 6px;
+      color: var(--error);
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover { background: rgba(248,113,113,0.2); }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 65px);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+    }
+
+    .sidebar-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .sidebar-label:first-child { margin-top: 0; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.88rem;
+      transition: all 0.18s;
+      margin-bottom: 0.25rem;
+    }
+
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .nav-item.active { background: rgba(124,109,250,0.15); color: var(--accent); font-weight: 500; }
+
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .token-display {
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .token-display .label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.4rem;
+    }
+
+    .token-value {
+      font-size: 0.68rem;
+      color: var(--success);
+      word-break: break-all;
+      font-family: monospace;
+      line-height: 1.5;
+    }
+
+    /* ── CONTENT ── */
+    .content { padding: 2rem; overflow-y: auto; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      position: relative; overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 100px; height: 100px;
+      background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+      opacity: 0.5;
+    }
+
+    .stat-card:nth-child(1) { --glow: rgba(124,109,250,0.4); }
+    .stat-card:nth-child(2) { --glow: rgba(250,109,138,0.4); }
+    .stat-card:nth-child(3) { --glow: rgba(74,222,128,0.4); }
+    .stat-card:nth-child(4) { --glow: rgba(250,204,21,0.3); }
+
+    .stat-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* SECTION */
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem; font-weight: 700;
+    }
+
+    .badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .badge-protected {
+      background: rgba(250,204,21,0.15);
+      border: 1px solid rgba(250,204,21,0.3);
+      color: var(--warn);
+    }
+
+    .badge-success {
+      background: rgba(74,222,128,0.12);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: var(--success);
+    }
+
+    .section-body { padding: 1.5rem; }
+
+    /* PROFILE FORM */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="text"], input[type="email"] {
+      width: 100%; padding: 0.65rem 0.9rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none; transition: all 0.2s;
+    }
+
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,109,250,0.12); }
+
+    .info-row {
+      display: flex; gap: 0.5rem; align-items: center;
+      padding: 0.65rem 0.9rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .btn-primary {
+      padding: 0.65rem 1.4rem;
+      background: linear-gradient(135deg, var(--accent), #9d6dfa);
+      border: none; border-radius: 7px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600; font-size: 0.88rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,109,250,0.4); }
+
+    .btn-secondary {
+      padding: 0.65rem 1.2rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .action-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .toast-inline {
+      font-size: 0.82rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .toast-inline.success { background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: var(--success); }
+    .toast-inline.error   { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: var(--error); }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.65rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    td { padding: 0.8rem 1rem; font-size: 0.88rem; border-bottom: 1px solid rgba(30,30,46,0.5); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .role-badge {
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: rgba(124,109,250,0.12);
+      border: 1px solid rgba(124,109,250,0.25);
+      color: var(--accent);
+    }
+
+    /* API TESTER */
+    .api-tester { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .endpoint-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .endpoint-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+    }
+
+    .method {
+      font-family: monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .method.GET    { background: rgba(74,222,128,0.15); color: var(--success); }
+    .method.POST   { background: rgba(124,109,250,0.15); color: var(--accent); }
+    .method.PUT    { background: rgba(250,204,21,0.15); color: var(--warn); }
+    .method.DELETE { background: rgba(248,113,113,0.15); color: var(--error); }
+
+    .endpoint-path {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .lock-icon { font-size: 0.8rem; color: var(--warn); }
+
+    .endpoint-result {
+      border-top: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      display: none;
+    }
+
+    .endpoint-result.open { display: block; }
+
+    pre {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--success);
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #060608;
+      border-radius: 6px;
+      padding: 0.75rem;
+    }
+
+    .run-btn {
+      padding: 0.3rem 0.8rem;
+      background: rgba(124,109,250,0.15);
+      border: 1px solid rgba(124,109,250,0.3);
+      border-radius: 5px;
+      color: var(--accent);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .run-btn:hover { background: rgba(124,109,250,0.25); }
+
+    /* ADD EMPLOYEE */
+    .emp-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr auto;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .page-header { margin-bottom: 1.5rem; }
+    .page-header h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; }
+    .page-header p { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🏢</div>
+    <span>OrgAuth Dashboard</span>
+  </div>
+  <div class="nav-right">
+    <span class="org-badge" id="orgName">Loading...</span>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Navigation</div>
+    <div class="nav-item active" onclick="showTab('dashboard', this)">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showTab('profile', this)">
+      <span class="icon">🏢</span> Profile & Update
+    </div>
+    <div class="nav-item" onclick="showTab('employees', this)">
+      <span class="icon">👥</span> Employees
+    </div>
+    <div class="nav-item" onclick="showTab('api', this)">
+      <span class="icon">⚡</span> API Tester
+    </div>
+
+    <div class="token-display">
+      <div class="label">🔑 JWT Token (stored)</div>
+      <div class="token-value" id="tokenPreview">Loading...</div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <div class="page-header">
+        <h2>Welcome back 👋</h2>
+        <p>Here's your organization overview — fetched via protected API</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-value" id="statEmployees">—</div>
+          <div class="stat-label">Total Employees</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value" id="statSalary">—</div>
+          <div class="stat-label">Salary Budget</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🏗️</div>
+          <div class="stat-value" id="statDepts">—</div>
+          <div class="stat-label">Departments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔐</div>
+          <div class="stat-value">JWT</div>
+          <div class="stat-label">Auth Method</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Protected Route Test — /api/dashboard</span>
+          <span class="badge badge-protected">🔒 Protected</span>
+        </div>
+        <div class="section-body">
+          <pre id="dashboardRaw">Fetching from protected API...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="tab-profile" class="tab-panel">
+      <div class="page-header">
+        <h2>Organization Profile</h2>
+        <p>Update your details — changes flow UI → Backend → DB → Response → UI</p>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Update Profile — PUT /api/organizations/:id</span>
+          <span class="badge badge-protected">🔒 Protected</span>
+        </div>
+        <div class="section-body">
+          <div class="profile-grid">
+            <div class="form-group">
+              <label>Organization Name</label>
+              <input type="text" id="pName" placeholder="Name"/>
+            </div>
+            <div class="form-group">
+              <label>Email (read-only)</label>
+              <div class="info-row">📧 <span id="pEmail">—</span></div>
+            </div>
+            <div class="form-group">
+              <label>Industry</label>
+              <input type="text" id="pIndustry" placeholder="Industry"/>
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" id="pLocation" placeholder="Location"/>
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="text" id="pPhone" placeholder="Phone number"/>
+            </div>
+            <div class="form-group">
+              <label>Organization ID (read-only)</label>
+              <div class="info-row">🆔 <span id="pId" style="font-family:monospace;font-size:0.8rem">—</span></div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn-primary" onclick="updateProfile()">💾 Save Changes</button>
+            <button class="btn-secondary" onclick="fetchProfile()">🔄 Refresh</button>
+            <span class="toast-inline" id="profileToast"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Raw API Response</span>
+          <span class="badge badge-success">Live</span>
+        </div>
+        <div class="section-body">
+          <pre id="profileRaw">Click Refresh to fetch profile...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES TAB -->
+    <div id="tab-employees" class="tab-panel">
+      <div class="page-header">
+        <h2>Employees</h2>
+        <p>Fetched via protected API — GET /api/employees</p>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Add Employee — POST /api/employees</span>
+          <span class="badge badge-protected">🔒 Protected</span>
+        </div>
+        <div class="section-body">
+          <div class="emp-form-grid">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" id="empName" placeholder="Full name"/>
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <input type="text" id="empRole" placeholder="Developer"/>
+            </div>
+            <div class="form-group">
+              <label>Department</label>
+              <input type="text" id="empDept" placeholder="Engineering"/>
+            </div>
+            <div class="form-group">
+              <label>Salary (₹)</label>
+              <input type="text" id="empSalary" placeholder="50000"/>
+            </div>
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <button class="btn-primary" onclick="addEmployee()">+ Add</button>
+            </div>
+          </div>
+          <div style="margin-top:0.75rem">
+            <span class="toast-inline" id="empToast"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Employee List</span>
+          <span class="badge badge-protected">🔒 Protected</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Role</th><th>Department</th><th>Salary</th><th>ID</th></tr>
+          </thead>
+          <tbody id="empTable">
+            <tr><td colspan="5" style="color:var(--muted);text-align:center">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- API TESTER TAB -->
+    <div id="tab-api" class="tab-panel">
+      <div class="page-header">
+        <h2>API Tester</h2>
+        <p>Test all endpoints with your stored JWT token</p>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Live Endpoint Testing</span>
+        </div>
+        <div class="section-body">
+          <div class="api-tester" id="apiTester">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API = "http://localhost:5000";
+
+// ── Guard: Redirect if no token ──────────────────────────────────────────────
+const token = localStorage.getItem("token");
+const orgRaw = localStorage.getItem("org");
+
+if (!token) {
+  alert("🔒 No token found. Please login first.");
+  window.location.href = "index.html";
+}
+
+const org = orgRaw ? JSON.parse(orgRaw) : {};
+document.getElementById("orgName").textContent = org.name || "Unknown";
+document.getElementById("tokenPreview").textContent = token ? token.slice(0, 40) + "..." : "None";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${token}`,
+});
+
+function showToastInline(id, msg, type) {
+  const t = document.getElementById(id);
+  t.textContent = msg;
+  t.className = `toast-inline ${type}`;
+  t.style.display = "inline-flex";
+  setTimeout(() => (t.style.display = "none"), 4000);
+}
+
+function showTab(tab, el) {
+  document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
+  document.getElementById("tab-" + tab).classList.add("active");
+  if (el) el.classList.add("active");
+
+  if (tab === "profile") fetchProfile();
+  if (tab === "employees") fetchEmployees();
+  if (tab === "api") buildApiTester();
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("org");
+  window.location.href = "index.html";
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function fetchDashboard() {
+  try {
+    const res = await fetch(`${API}/api/dashboard`, { headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById("dashboardRaw").textContent = JSON.stringify(data, null, 2);
+
+    if (data.success) {
+      document.getElementById("statEmployees").textContent = data.data.stats.totalEmployees;
+      document.getElementById("statSalary").textContent = "₹" + (data.data.stats.totalSalaryBudget / 1000).toFixed(0) + "k";
+      document.getElementById("statDepts").textContent = data.data.stats.departments.length;
+    }
+  } catch {
+    document.getElementById("dashboardRaw").textContent = "❌ Server not reachable. Run: node server.js";
+  }
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+async function fetchProfile() {
+  try {
+    const res = await fetch(`${API}/api/profile`, { headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById("profileRaw").textContent = JSON.stringify(data, null, 2);
+
+    if (data.success) {
+      const d = data.data;
+      document.getElementById("pName").value = d.name || "";
+      document.getElementById("pEmail").textContent = d.email || "";
+      document.getElementById("pIndustry").value = d.industry || "";
+      document.getElementById("pLocation").value = d.location || "";
+      document.getElementById("pPhone").value = d.phone || "";
+      document.getElementById("pId").textContent = d.id || "";
+    }
+  } catch {
+    document.getElementById("profileRaw").textContent = "❌ Cannot connect to backend.";
+  }
+}
+
+async function updateProfile() {
+  const body = {
+    name: document.getElementById("pName").value,
+    industry: document.getElementById("pIndustry").value,
+    location: document.getElementById("pLocation").value,
+    phone: document.getElementById("pPhone").value,
+  };
+
+  try {
+    const res = await fetch(`${API}/api/organizations/${org.id}`, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    document.getElementById("profileRaw").textContent = JSON.stringify(data, null, 2);
+
+    if (data.success) {
+      // Update stored org & nav
+      const updated = { ...org, ...data.data };
+      localStorage.setItem("org", JSON.stringify(updated));
+      document.getElementById("orgName").textContent = updated.name;
+      showToastInline("profileToast", "✅ " + data.message, "success");
+    } else {
+      showToastInline("profileToast", data.message, "error");
+    }
+  } catch {
+    showToastInline("profileToast", "❌ Cannot connect to backend.", "error");
+  }
+}
+
+// ── Employees ─────────────────────────────────────────────────────────────────
+async function fetchEmployees() {
+  try {
+    const res = await fetch(`${API}/api/employees`, { headers: authHeaders() });
+    const data = await res.json();
+    const tbody = document.getElementById("empTable");
+
+    if (data.success && data.data.length > 0) {
+      tbody.innerHTML = data.data.map(e => `
+        <tr>
+          <td>${e.name}</td>
+          <td><span class="role-badge">${e.role}</span></td>
+          <td>${e.dept}</td>
+          <td>₹${e.salary.toLocaleString()}</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:var(--muted)">${e.id}</td>
+        </tr>`).join("");
+    } else if (data.success) {
+      tbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted);text-align:center">No employees found. Add one above!</td></tr>`;
+    }
+  } catch {
+    document.getElementById("empTable").innerHTML = `<tr><td colspan="5" style="color:var(--error);text-align:center">❌ Cannot connect to backend.</td></tr>`;
+  }
+}
+
+async function addEmployee() {
+  const body = {
+    name: document.getElementById("empName").value.trim(),
+    role: document.getElementById("empRole").value.trim(),
+    dept: document.getElementById("empDept").value.trim(),
+    salary: parseInt(document.getElementById("empSalary").value) || 0,
+  };
+
+  if (!body.name || !body.role || !body.dept) {
+    return showToastInline("empToast", "⚠️ Name, role & department required.", "error");
+  }
+
+  try {
+    const res = await fetch(`${API}/api/employees`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToastInline("empToast", "✅ Employee added!", "success");
+      document.getElementById("empName").value = "";
+      document.getElementById("empRole").value = "";
+      document.getElementById("empDept").value = "";
+      document.getElementById("empSalary").value = "";
+      fetchEmployees();
+    } else {
+      showToastInline("empToast", data.message, "error");
+    }
+  } catch {
+    showToastInline("empToast", "❌ Cannot connect to backend.", "error");
+  }
+}
+
+// ── API Tester ────────────────────────────────────────────────────────────────
+const endpoints = [
+  { method: "GET",  path: "/",                     protected: false, label: "Health Check" },
+  { method: "GET",  path: "/api/organizations",    protected: false, label: "Get All Organizations" },
+  { method: "GET",  path: "/api/auth/verify",      protected: true,  label: "Verify JWT Token" },
+  { method: "GET",  path: "/api/profile",          protected: true,  label: "Get Profile (Protected)" },
+  { method: "GET",  path: "/api/dashboard",        protected: true,  label: "Get Dashboard (Protected)" },
+  { method: "GET",  path: "/api/employees",        protected: true,  label: "Get Employees (Protected)" },
+  { method: "PUT",  path: `/api/organizations/${org.id}`, protected: true, label: "Update Organization (Protected)", body: { name: "Updated Name Test" } },
+];
+
+function buildApiTester() {
+  const container = document.getElementById("apiTester");
+  container.innerHTML = endpoints.map((ep, i) => `
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="runEndpoint(${i})">
+        <span class="method ${ep.method}">${ep.method}</span>
+        <span class="endpoint-path">${ep.path}</span>
+        ${ep.protected ? '<span class="lock-icon">🔒</span>' : '<span class="lock-icon" style="color:var(--success)">🌐</span>'}
+        <span style="font-size:0.8rem;color:var(--muted);flex:1;text-align:right">${ep.label}</span>
+        <button class="run-btn" onclick="event.stopPropagation();runEndpoint(${i})">▶ Run</button>
+      </div>
+      <div class="endpoint-result" id="result-${i}">
+        <pre id="pre-${i}">Click Run to test this endpoint...</pre>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function runEndpoint(i) {
+  const ep = endpoints[i];
+  const resultEl = document.getElementById(`result-${i}`);
+  const preEl = document.getElementById(`pre-${i}`);
+
+  resultEl.classList.add("open");
+  preEl.textContent = "⏳ Fetching...";
+
+  try {
+    const opts = { method: ep.method, headers: ep.protected ? authHeaders() : { "Content-Type": "application/json" } };
+    if (ep.body) opts.body = JSON.stringify(ep.body);
+
+    const res = await fetch(`${API}${ep.path}`, opts);
+    const data = await res.json();
+    preEl.style.color = data.success ? "var(--success)" : "var(--error)";
+    preEl.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    preEl.style.color = "var(--error)";
+    preEl.textContent = "❌ Cannot connect. Make sure backend is running on port 5000.\n\nRun: cd backend && node server.js";
+  }
+}
+
+// Init
+fetchDashboard();
+</script>
+</body>
+</html>
